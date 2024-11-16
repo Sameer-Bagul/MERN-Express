@@ -926,22 +926,611 @@ This example demonstrates how to use `useState` and `useEffect` hooks to manage 
 
 <!-- !=============================================================================== -->
 ### Ch 8 - useReducers for State management
-- Notes:
+
+#### What is State Management?
+- State management refers to the practice of managing the state of an application.
+- In React, state management can be done using local component state, context API, or state management libraries like Redux, MobX, or Zustand.
+- Effective state management ensures that the application state is predictable, maintainable, and scalable.
+
+#### What is useReducer? 
+- The `useReducer` hook is an alternative to `useState` for managing complex state logic in React.
+- It is based on the reducer pattern used in JavaScript and other programming languages.
+- `useReducer` takes a reducer function and an initial state as arguments and returns the current state and a dispatch function.
+- The reducer function takes the current state and an action as arguments and returns the new state based on the action type.
+
+#### Example of useReducer Hook
+
+In this example, we will use the `useReducer` hook to manage the state of a list of videos. The reducer function will handle actions for adding, deleting, and updating videos.
+
+**App.js**
+
+```jsx
+import { useReducer, useState } from 'react';
+import './App.css';
+import AddVideo from './components/AddVideo';
+import videoDB from './data/data';
+import VideoList from './components/VideoList';
+
+function App() {
+    console.log('render App');
+    const [editableVideo, setEditableVideo] = useState(null);
+
+    function videoReducer(videos, action) {
+        switch (action.type) {
+            case 'ADD':
+                return [
+                    ...videos,
+                    { ...action.payload, id: videos.length + 1 }
+                ];
+            case 'DELETE':
+                return videos.filter(video => video.id !== action.payload);
+            case 'UPDATE':
+                const index = videos.findIndex(v => v.id === action.payload.id);
+                const newVideos = [...videos];
+                newVideos.splice(index, 1, action.payload);
+                setEditableVideo(null);
+                return newVideos;
+            default:
+                return videos;
+        }
+    }
+
+    const [videos, dispatch] = useReducer(videoReducer, videoDB);
+
+    function editVideo(id) {
+        setEditableVideo(videos.find(video => video.id === id));
+    }
+
+    return (
+        <div className="App" onClick={() => console.log('App')}>
+            <AddVideo dispatch={dispatch} editableVideo={editableVideo}></AddVideo>
+            <VideoList dispatch={dispatch} editVideo={editVideo} videos={videos}></VideoList>
+        </div>
+    );
+}
+
+export default App;
+```
+
+In this example:
+- `App.js` uses the `useReducer` hook to manage the state of the videos.
+- The `videoReducer` function handles actions for adding, deleting, and updating videos.
+- The `dispatch` function is used to dispatch actions to the reducer.
+- The `editVideo` function sets the video to be edited.
+
+This example demonstrates how to use the `useReducer` hook for state management in a React application, providing a more structured approach to handling complex state logic.
 
 <!-- !=============================================================================== -->
 
 ### Ch 9 - Context API, useContext hook
-- Notes:
+
+#### what is Context API?
+- Context API is a feature in React that allows data to be passed through the component tree without having to pass props down manually at every level.
+
+#### What is useContext?    
+- The `useContext` hook is used to consume context values in functional components.
+- It allows components to access context values without using a consumer component.
+- The `useContext` hook takes a context object as an argument and returns the current context value.
+
+#### Example of useContext Hook
+
+In this example, we will create a simple React application that uses the Context API and the `useContext` hook to manage and consume a theme context.
+
+**ThemeContext.js**
+
+```jsx
+import React, { createContext, useState } from 'react';
+
+const ThemeContext = createContext();
+
+function ThemeProvider({ children }) {
+    const [theme, setTheme] = useState('light');
+
+    return (
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+}
+
+export { ThemeContext, ThemeProvider };
+```
+
+**App.js**
+
+```jsx
+import React from 'react';
+import { ThemeProvider } from './ThemeContext';
+import ThemedComponent from './ThemedComponent';
+
+function App() {
+    return (
+        <ThemeProvider>
+            <ThemedComponent />
+        </ThemeProvider>
+    );
+}
+
+export default App;
+```
+
+**ThemedComponent.js**
+
+```jsx
+import React, { useContext } from 'react';
+import { ThemeContext } from './ThemeContext';
+
+function ThemedComponent() {
+    const { theme, setTheme } = useContext(ThemeContext);
+
+    return (
+        <div style={{ background: theme === 'light' ? '#fff' : '#333', color: theme === 'light' ? '#000' : '#fff' }}>
+            <p>Current Theme: {theme}</p>
+            <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>Toggle Theme</button>
+        </div>
+    );
+}
+
+export default ThemedComponent;
+```
+
+In this example:
+- `ThemeContext.js` defines the context and provides a `ThemeProvider` component to manage the theme state.
+- `App.js` wraps the `ThemedComponent` with the `ThemeProvider` to provide the theme context.
+- `ThemedComponent.js` consumes the theme context using the `useContext` hook and provides a button to toggle the theme.
+
+This example demonstrates how to use the Context API and the `useContext` hook to manage and consume context values in a React application.
+
+
+
 <!-- !=============================================================================== -->
 
-### Ch 10 - Context API with useReducers, Custom hooks
-- Notes:
+### Ch 10 - Context API with useReducer and Custom Hooks
+
+#### **What is useReducer?**
+- The `useReducer` hook is a more advanced alternative to `useState` for managing complex state logic.
+- It is especially useful when:
+  - The state has multiple sub-values.
+  - The next state depends on the previous state.
+  - You want to centralize state transitions for better maintainability.
+
+#### **Why use Context API with useReducer?**
+- Combining the Context API with `useReducer` allows you to:
+  - Centralize global state management.
+  - Define state logic separately using reducers.
+  - Share complex state and actions across the component tree efficiently.
+
+---
+
+### **Example: Todo App with Context API and useReducer**
+
+In this example, we will build a simple Todo App using Context API and `useReducer` for state management. We’ll also encapsulate logic in a custom hook for better reusability.
+
+---
+
+#### **1. Create the `TodoContext`**
+
+**`TodoContext.js`**
+```jsx
+import React, { createContext, useReducer } from 'react';
+
+// Create the context
+const TodoContext = createContext();
+
+// Define initial state
+const initialState = {
+    todos: []
+};
+
+// Define reducer function
+function todoReducer(state, action) {
+    switch (action.type) {
+        case 'ADD_TODO':
+            return { ...state, todos: [...state.todos, action.payload] };
+        case 'REMOVE_TODO':
+            return { ...state, todos: state.todos.filter(todo => todo.id !== action.payload) };
+        case 'TOGGLE_TODO':
+            return {
+                ...state,
+                todos: state.todos.map(todo =>
+                    todo.id === action.payload ? { ...todo, completed: !todo.completed } : todo
+                )
+            };
+        default:
+            throw new Error(`Unknown action type: ${action.type}`);
+    }
+}
+
+// Define Provider component
+function TodoProvider({ children }) {
+    const [state, dispatch] = useReducer(todoReducer, initialState);
+
+    return (
+        <TodoContext.Provider value={{ state, dispatch }}>
+            {children}
+        </TodoContext.Provider>
+    );
+}
+
+export { TodoContext, TodoProvider };
+```
+
+---
+
+#### **2. Create a Custom Hook**
+
+**`useTodos.js`**
+```jsx
+import { useContext } from 'react';
+import { TodoContext } from './TodoContext';
+
+// Custom hook for consuming TodoContext
+function useTodos() {
+    const context = useContext(TodoContext);
+    if (!context) {
+        throw new Error('useTodos must be used within a TodoProvider');
+    }
+    return context;
+}
+
+export default useTodos;
+```
+
+---
+
+#### **3. Build the App Component**
+
+**`App.js`**
+```jsx
+import React from 'react';
+import { TodoProvider } from './TodoContext';
+import TodoList from './TodoList';
+import AddTodo from './AddTodo';
+
+function App() {
+    return (
+        <TodoProvider>
+            <div style={{ padding: '20px' }}>
+                <h1>Todo App</h1>
+                <AddTodo />
+                <TodoList />
+            </div>
+        </TodoProvider>
+    );
+}
+
+export default App;
+```
+
+---
+
+#### **4. Create Components for Adding and Displaying Todos**
+
+**`AddTodo.js`**
+```jsx
+import React, { useState } from 'react';
+import useTodos from './useTodos';
+
+function AddTodo() {
+    const [text, setText] = useState('');
+    const { dispatch } = useTodos();
+
+    const handleAdd = () => {
+        if (text.trim()) {
+            dispatch({
+                type: 'ADD_TODO',
+                payload: { id: Date.now(), text, completed: false }
+            });
+            setText('');
+        }
+    };
+
+    return (
+        <div style={{ marginBottom: '20px' }}>
+            <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Add a todo..."
+                style={{ padding: '10px', width: '300px', marginRight: '10px' }}
+            />
+            <button onClick={handleAdd} style={{ padding: '10px 20px' }}>
+                Add
+            </button>
+        </div>
+    );
+}
+
+export default AddTodo;
+```
+
+---
+
+**`TodoList.js`**
+```jsx
+import React from 'react';
+import useTodos from './useTodos';
+
+function TodoList() {
+    const { state, dispatch } = useTodos();
+
+    if (state.todos.length === 0) {
+        return <p>No todos yet!</p>;
+    }
+
+    return (
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+            {state.todos.map(todo => (
+                <li
+                    key={todo.id}
+                    style={{
+                        padding: '10px',
+                        margin: '5px 0',
+                        background: '#f0f0f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderRadius: '5px'
+                    }}
+                >
+                    <span
+                        style={{
+                            textDecoration: todo.completed ? 'line-through' : 'none',
+                            cursor: 'pointer'
+                        }}
+                        onClick={() => dispatch({ type: 'TOGGLE_TODO', payload: todo.id })}
+                    >
+                        {todo.text}
+                    </span>
+                    <button
+                        onClick={() => dispatch({ type: 'REMOVE_TODO', payload: todo.id })}
+                        style={{ background: 'red', color: '#fff', border: 'none', borderRadius: '5px', padding: '5px 10px' }}
+                    >
+                        Remove
+                    </button>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+export default TodoList;
+```
+
+---
+
+### **Key Highlights in this Example**
+1. **Separation of Concerns**: 
+   - The reducer handles all state transitions, keeping the logic centralized.
+   - Context is used to provide state and dispatch across the app.
+   - Components (`AddTodo`, `TodoList`) remain clean and focused on rendering UI.
+
+2. **Custom Hook for Reusability**:
+   - The `useTodos` hook encapsulates access to the context, making it easier to use in multiple components.
+
+3. **Scalable State Management**:
+   - Adding new actions (e.g., edit todo) only requires updating the reducer and dispatching the action.
+
+---
+
+### **Advantages of this Pattern**
+1. **Centralized State Logic**: Reducer simplifies state management in one place.
+2. **Global Access**: Context provides state and actions to any component in the tree.
+3. **Testability**: Reducers are pure functions and can be easily tested.
+4. **Modular and Scalable**: Components are decoupled and can be extended easily.
+
+This approach lays the foundation for robust global state management without requiring additional libraries like Redux for smaller applications.
 
 <!-- !=============================================================================== -->
-### Ch 11 - useRef hook
+### Ch 11 - **`useRef` Hook**
 
-- Notes:
+#### **What is `useRef`?**
+- The `useRef` hook is a React hook that returns a mutable object (`ref`) whose `.current` property persists across re-renders.
+- It is primarily used to:
+  - Access and manipulate DOM elements directly.
+  - Store a mutable value that does not cause re-renders when updated.
+  - Maintain references to previous states or variables across renders.
 
+#### **Key Features of `useRef`:**
+1. **Persistent Value:** A value stored in `useRef` remains the same across renders.
+2. **No Re-Renders:** Updating the `.current` property of a `useRef` object does not cause a component to re-render.
+3. **Direct DOM Manipulation:** Use `useRef` to interact with DOM nodes without causing re-renders.
+
+---
+
+### **Common Use Cases**
+1. **Accessing DOM Elements.**
+2. **Storing Previous State or Props.**
+3. **Managing Focus, Text Selection, or Media Playback.**
+4. **Tracking Mutable Variables (e.g., timers, counters).**
+
+---
+
+### **Example 1: DOM Manipulation**
+
+**`FocusInput.js`**
+```jsx
+import React, { useRef } from 'react';
+
+function FocusInput() {
+    const inputRef = useRef(null);
+
+    const handleFocus = () => {
+        inputRef.current.focus(); // Focuses the input field
+    };
+
+    return (
+        <div style={{ padding: '20px' }}>
+            <input
+                ref={inputRef}
+                type="text"
+                placeholder="Type something..."
+                style={{ padding: '10px', width: '300px' }}
+            />
+            <button onClick={handleFocus} style={{ marginLeft: '10px', padding: '10px 20px' }}>
+                Focus Input
+            </button>
+        </div>
+    );
+}
+
+export default FocusInput;
+```
+
+**What Happens Here?**
+- The `useRef` hook creates a reference to the input element.
+- The `handleFocus` function accesses the input element via `inputRef.current` and focuses it.
+
+---
+
+### **Example 2: Storing Previous State**
+
+**`PreviousState.js`**
+```jsx
+import React, { useState, useRef, useEffect } from 'react';
+
+function PreviousState() {
+    const [count, setCount] = useState(0);
+    const prevCountRef = useRef();
+
+    useEffect(() => {
+        prevCountRef.current = count; // Update ref with the latest count
+    }, [count]);
+
+    const prevCount = prevCountRef.current;
+
+    return (
+        <div style={{ padding: '20px' }}>
+            <p>Current Count: {count}</p>
+            <p>Previous Count: {prevCount ?? 'None'}</p>
+            <button onClick={() => setCount(count + 1)} style={{ padding: '10px 20px' }}>
+                Increment
+            </button>
+        </div>
+    );
+}
+
+export default PreviousState;
+```
+
+**What Happens Here?**
+- The `useRef` hook stores the previous state of the `count` variable.
+- The previous value (`prevCount`) is updated during each render cycle but does not cause a re-render itself.
+
+---
+
+### **Example 3: Tracking Mutable Values (Timers)**
+
+**`Timer.js`**
+```jsx
+import React, { useRef, useState } from 'react';
+
+function Timer() {
+    const [timer, setTimer] = useState(0);
+    const intervalRef = useRef();
+
+    const startTimer = () => {
+        if (!intervalRef.current) {
+            intervalRef.current = setInterval(() => {
+                setTimer((prevTimer) => prevTimer + 1);
+            }, 1000);
+        }
+    };
+
+    const stopTimer = () => {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null; // Reset the ref
+    };
+
+    return (
+        <div style={{ padding: '20px' }}>
+            <p>Timer: {timer} seconds</p>
+            <button onClick={startTimer} style={{ padding: '10px 20px', marginRight: '10px' }}>
+                Start
+            </button>
+            <button onClick={stopTimer} style={{ padding: '10px 20px' }}>
+                Stop
+            </button>
+        </div>
+    );
+}
+
+export default Timer;
+```
+
+**What Happens Here?**
+- `intervalRef` stores the reference to the interval ID.
+- The reference ensures the interval can be stopped without re-creating it on every render.
+
+---
+
+### **Example 4: Managing Media Playback**
+
+**`VideoPlayer.js`**
+```jsx
+import React, { useRef } from 'react';
+
+function VideoPlayer() {
+    const videoRef = useRef();
+
+    const playVideo = () => {
+        videoRef.current.play();
+    };
+
+    const pauseVideo = () => {
+        videoRef.current.pause();
+    };
+
+    return (
+        <div style={{ padding: '20px' }}>
+            <video
+                ref={videoRef}
+                width="400"
+                controls
+                src="https://www.w3schools.com/html/mov_bbb.mp4"
+                style={{ display: 'block', marginBottom: '20px' }}
+            />
+            <button onClick={playVideo} style={{ marginRight: '10px', padding: '10px 20px' }}>
+                Play
+            </button>
+            <button onClick={pauseVideo} style={{ padding: '10px 20px' }}>
+                Pause
+            </button>
+        </div>
+    );
+}
+
+export default VideoPlayer;
+```
+
+**What Happens Here?**
+- `useRef` references the `<video>` element.
+- Functions `playVideo` and `pauseVideo` use the reference to control video playback.
+
+---
+
+### **Key Takeaways**
+1. **Persistent Across Renders:** `useRef` keeps the same object reference throughout the component’s lifecycle.
+2. **No Re-Renders:** Changing the `.current` property does not trigger re-renders, making it efficient for managing non-rendering state.
+3. **Direct DOM Access:** Simplifies DOM manipulation without relying on class components or third-party libraries.
+
+---
+
+### **When to Use `useRef` vs `useState`**
+| Feature                 | `useRef`                                      | `useState`                        |
+|-------------------------|-----------------------------------------------|-----------------------------------|
+| **Triggers Re-Renders?**| No                                            | Yes                               |
+| **Persistent Value?**   | Yes (persists across renders)                 | Yes (persists in state)           |
+| **Usage**               | Accessing DOM, storing mutable values         | Managing state that affects UI    |
+
+---
+
+### **Advanced Insights**
+- **Avoid Overuse**: Use `useRef` only when you need to persist mutable values or interact with the DOM.
+- **Not for UI State**: Use `useState` or `useReducer` for managing UI state that triggers re-renders.
+- **Combine with useEffect**: Use `useRef` with `useEffect` to handle setup/teardown logic like event listeners or animations.
+
+With `useRef`, you can simplify complex DOM interactions, manage mutable state efficiently, and write clean, reusable components.
 <!-- !=============================================================================== -->### Ch 12 - useEffect hook detailed, API calls
 
 ### Ch 12 - useEffect hook detailed, API calls
