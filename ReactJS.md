@@ -3,6 +3,10 @@
 ### Introduction
 Welcome to the **ReactJS Section!** This page contains comprehensive notes and summaries from the ReactJS course, covering various topics and concepts essential for mastering ReactJS. Whether you are a beginner or an experienced developer, these notes will help you understand and implement ReactJS effectively in your projects. Explore the chapters to learn about React setup, components, JSX, state management, hooks, advanced React concepts, and much more. Happy learning!
 
+
+<!-- !=============================================================================== -->
+
+
 ### Ch 1 - React Setup, React DOM, Project Structure
 
 #### Why React?
@@ -80,6 +84,7 @@ Welcome to the **ReactJS Section!** This page contains comprehensive notes and s
     - Creates a root element to render the React application.
     - Manages the React component tree.
 
+<!-- !=============================================================================== -->
 ### Ch 2 - Component, Props, JSX
 
 #### What is a Component?
@@ -165,6 +170,8 @@ return (
 );
 ```
 
+<!-- !=============================================================================== -->
+
 ### Ch 3 - Conditional Rendering, Lists and Keys
 
 #### Conditional Rendering
@@ -197,6 +204,35 @@ function App() {
     );
 }
 ```
+#### Ternary Operators for Conditional Rendering
+- Ternary operators provide a concise way to perform conditional rendering in React.
+- Syntax: `condition ? trueExpression : falseExpression`
+- Useful for inline conditional rendering within JSX.
+
+**Example of Ternary Operator for Conditional Rendering**
+
+```jsx
+function UserGreeting({ isLoggedIn }) {
+    return (
+        <div>
+            {isLoggedIn ? <h1>Welcome back!</h1> : <h1>Please sign up.</h1>}
+        </div>
+    );
+}
+
+function App() {
+    const isLoggedIn = true;
+    return (
+        <div>
+            <UserGreeting isLoggedIn={isLoggedIn} />
+        </div>
+    );
+}
+```
+
+- In this example, the `UserGreeting` component uses a ternary operator to render different messages based on the `isLoggedIn` prop.
+- If `isLoggedIn` is `true`, it displays "Welcome back!"; otherwise, it displays "Please sign up."
+- Ternary operators help keep the code concise and readable.
 
 #### Lists and Keys
 - Use the `map()` function to iterate over an array and return a list of elements.
@@ -276,38 +312,319 @@ function App() {
 
 - This example demonstrates how to conditionally render a list of todos or a message if there are no todos left.
 
-### Ch 4 - Events, Event handler, Synthetic Event Object
-- Notes:
+<!-- !=============================================================================== -->
 
+### Ch 4 - Events, Event Handler, Synthetic Event Object
+
+#### What are Events?
+- Actions that occur in the browser, such as clicks, keypresses, form submissions, and mouse movements.
+- Events are used to trigger specific functionality in response to user interactions.
+
+#### What is an Event Handler?
+- A function that is executed in response to an event.
+- Event handlers are used to define what should happen when an event occurs.
+- Can be defined inline or as separate functions.
+
+#### What is a Synthetic Event Object?
+- A cross-browser wrapper around the native event.
+- Provides consistent properties and methods across different browsers.
+- Synthetic events are used by React to ensure compatibility and performance.
+
+#### Handling Events in React
+- Use camelCase event names like `onClick`, `onSubmit`, `onChange`.
+- Pass event handlers as props to components.
+- Access event properties like `target`, `value`, `checked`.
+
+**Example of Handling Events**
+
+```jsx
+function Button() {
+    function handleClick() {
+        alert('Button clicked!');
+    }
+
+    return (
+        <button onClick={handleClick}>Click me</button>
+    );
+}
+```
+
+#### Common Event Types and Handlers
+- `onClick`: Triggered when an element is clicked.
+- `onChange`: Triggered when the value of an input element changes.
+- `onSubmit`: Triggered when a form is submitted.
+- `onKeyPress`: Triggered when a key is pressed.
+- `onMouseOver`: Triggered when the mouse pointer is over an element.
+- `onFocus`: Triggered when an element gains focus.
+- `onBlur`: Triggered when an element loses focus.
+
+**Example of Multiple Event Handlers**
+
+```jsx
+function Form() {
+    function handleSubmit(event) {
+        event.preventDefault();
+        alert('Form submitted!');
+    }
+
+    function handleChange(event) {
+        console.log('Input value:', event.target.value);
+    }
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <input type="text" onChange={handleChange} />
+            <button type="submit">Submit</button>
+        </form>
+    );
+}
+```
+
+#### Advanced Event Handling
+- Use event delegation to handle events efficiently.
+- Use `event.persist()` to retain the event object in asynchronous code.
+- Combine multiple event handlers for complex interactions.
+
+**Example of Advanced Event Handling**
+
+```jsx
+function App() {
+    function handleClick(event) {
+        console.log('Button clicked:', event.target);
+    }
+
+    function handleMouseOver(event) {
+        console.log('Mouse over:', event.target);
+    }
+
+    return (
+        <div>
+            <button onClick={handleClick} onMouseOver={handleMouseOver}>
+                Hover and Click me
+            </button>
+        </div>
+    );
+}
+```
+
+#### Synthetic Event Object Properties
+- `event.target`: The element that triggered the event.
+- `event.type`: The type of event (e.g., 'click', 'submit').
+- `event.preventDefault()`: Prevents the default action of the event.
+- `event.stopPropagation()`: Stops the event from propagating to parent elements.
+
+**Example of Using Synthetic Event Object**
+
+```jsx
+function InputField() {
+    function handleFocus(event) {
+        console.log('Input focused:', event.target);
+    }
+
+    function handleBlur(event) {
+        console.log('Input blurred:', event.target);
+    }
+
+    return (
+        <input type="text" onFocus={handleFocus} onBlur={handleBlur} />
+    );
+}
+```
+
+#### Event Handling Best Practices
+- Keep event handlers small and focused.
+- Use descriptive names for event handler functions.
+- Avoid inline event handlers for better readability and maintainability.
+- Use `event.persist()` when working with asynchronous code to avoid losing the event object.
+
+**Example of Best Practices**
+
+```jsx
+function App() {
+    function handleButtonClick(event) {
+        event.persist();
+        setTimeout(() => {
+            console.log('Button clicked:', event.target);
+        }, 1000);
+    }
+
+    return (
+        <div>
+            <button onClick={handleButtonClick}>Click me</button>
+        </div>
+    );
+}
+```
+
+- This example demonstrates how to persist the event object for use in asynchronous code.
+
+
+<!-- !=============================================================================== -->
 ### Ch 5 - State, useState hook
-- Notes:
 
+#### What is State?
+- State is a built-in object in React that allows components to store and manage data.
+- State is mutable and can change over time, triggering re-renders of the component.
+- Each component can have its own state, managed using the `useState` hook in functional components or `this.state` in class components.
+
+**Example of State in a Functional Component**
+
+```jsx
+import React, { useState } from 'react';
+
+function Counter() {
+    const [count, setCount] = useState(0);
+
+    return (
+        <div>
+            <p>Count: {count}</p>
+            <button onClick={() => setCount(count + 1)}>Increment</button>
+        </div>
+    );
+}
+
+export default Counter;
+```
+
+#### What are Hooks?
+- Hooks are functions that let you use state and other React features in functional components.
+- Introduced in React 16.8 to allow stateful logic in functional components.
+- Common hooks include `useState`, `useEffect`, `useContext`, `useReducer`, and more.
+
+**Example of Using Hooks**
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function Timer() {
+    const [seconds, setSeconds] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setSeconds(prevSeconds => prevSeconds + 1);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return <div>Seconds: {seconds}</div>;
+}
+
+export default Timer;
+```
+
+#### What is useState?
+- `useState` is a hook that allows you to add state to functional components.
+- It returns an array with two elements: the current state value and a function to update it.
+- The initial state value is passed as an argument to `useState`.
+
+**Example of useState Hook**
+
+```jsx
+import React, { useState } from 'react';
+
+function Toggle() {
+    const [isOn, setIsOn] = useState(false);
+
+    return (
+        <div>
+            <p>{isOn ? 'ON' : 'OFF'}</p>
+            <button onClick={() => setIsOn(!isOn)}>Toggle</button>
+        </div>
+    );
+}
+
+export default Toggle;
+```
+
+#### What is State Management?
+- State management refers to the practice of managing the state of an application.
+- In React, state management can be done using local component state, context API, or state management libraries like Redux, MobX, or Zustand.
+- Effective state management ensures that the application state is predictable, maintainable, and scalable.
+
+**Example of State Management with Context API**
+
+```jsx
+import React, { createContext, useState, useContext } from 'react';
+
+const ThemeContext = createContext();
+
+function ThemeProvider({ children }) {
+    const [theme, setTheme] = useState('light');
+
+    return (
+        <ThemeContext.Provider value={{ theme, setTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+}
+
+function ThemedComponent() {
+    const { theme, setTheme } = useContext(ThemeContext);
+
+    return (
+        <div style={{ background: theme === 'light' ? '#fff' : '#333', color: theme === 'light' ? '#000' : '#fff' }}>
+            <p>Current Theme: {theme}</p>
+            <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>Toggle Theme</button>
+        </div>
+    );
+}
+
+function App() {
+    return (
+        <ThemeProvider>
+            <ThemedComponent />
+        </ThemeProvider>
+    );
+}
+
+export default App;
+```
+
+
+
+<!-- !=============================================================================== -->
 ### Ch 6 - Forms, Event Objects, lifting state up
 - Notes:
 
+<!-- !=============================================================================== -->
 ### Ch 7 - CRUD operations, useEffect hook
 - Notes:
 
+<!-- !=============================================================================== -->
 ### Ch 8 - useReducers for State management
 - Notes:
 
+<!-- !=============================================================================== -->
+
 ### Ch 9 - Context API, useContext hook
 - Notes:
+<!-- !=============================================================================== -->
 
 ### Ch 10 - Context API with useReducers, Custom hooks
 - Notes:
 
+<!-- !=============================================================================== -->
 ### Ch 11 - useRef hook
+
 - Notes:
+
+<!-- !=============================================================================== -->### Ch 12 - useEffect hook detailed, API calls
 
 ### Ch 12 - useEffect hook detailed, API calls
 - Notes:
 
+
+<!-- !=============================================================================== -->### Ch 12 - useEffect hook detailed, API calls
+
 ### Ch 13 - useMemo, useCallback, memo
 - Notes:
+<!-- !=============================================================================== -->### Ch 12 - useEffect hook detailed, API calls
 
 ### Ch 14 - Advanced React 1 - forwardRef, useDeferred, useTransition etc
 - Notes:
+<!-- !=============================================================================== -->### Ch 12 - useEffect hook detailed, API calls
 
 ### Ch 15 - Advanced React 2 - Lazy loading, flushSync, createPortal etc
 - Notes:
+<!-- !=============================================================================== -->### Ch 12 - useEffect hook detailed, API calls
