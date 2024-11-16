@@ -584,12 +584,345 @@ export default App;
 
 
 <!-- !=============================================================================== -->
-### Ch 6 - Forms, Event Objects, lifting state up
-- Notes:
+### Ch 6 - Forms, Event Objects, Lifting State Up
+
+#### What are Forms?
+- Forms are used to collect user input and submit data to a server.
+- In React, forms are created using HTML form elements like `input`, `textarea`, `select`, and `button`.
+- Form elements can be controlled or uncontrolled components.
+
+#### Controlled vs. Uncontrolled Components
+- **Controlled Components**: Form elements whose value is controlled by React state.
+    - The value of the form element is set by the state, and any changes to the input are handled by updating the state.
+    - Provides a single source of truth for form data, making it easier to manage and validate.
+    - Example:
+
+        ```jsx
+        import React, { useState } from 'react';
+
+        function ControlledForm() {
+            const [inputValue, setInputValue] = useState('');
+
+            const handleChange = (event) => {
+                setInputValue(event.target.value);
+            };
+
+            return (
+                <form>
+                    <label>
+                        Name:
+                        <input type="text" value={inputValue} onChange={handleChange} />
+                    </label>
+                </form>
+            );
+        }
+
+        export default ControlledForm;
+        ```
+
+- **Uncontrolled Components**: Form elements whose value is managed by the DOM.
+    - The value of the form element is accessed using refs, and changes are not directly tied to the component state.
+    - Useful for integrating with non-React code or libraries.
+    - Example:
+        ```jsx
+        import React, { useRef } from 'react';
+
+        function UncontrolledForm() {
+            const inputRef = useRef(null);
+
+            const handleSubmit = (event) => {
+                event.preventDefault(); // Prevents the default form submission behavior
+                alert(`Input Value: ${inputRef.current.value}`);
+            };
+
+            return (
+                <form onSubmit={handleSubmit}>
+                    <label>
+                        Name:
+                        <input type="text" ref={inputRef} />
+                    </label>
+                    <button type="submit">Submit</button>
+                </form>
+            );
+        }
+
+        export default UncontrolledForm;
+        ```
+
+#### Handling Form Data
+- **Capturing User Input**: Use the `onChange` event to capture user input in form elements.
+    - Update the state with the input value to reflect changes.
+    - Example:
+        ```jsx
+        import React, { useState } from 'react';
+
+        function Form() {
+            const [name, setName] = useState('');
+
+            const handleChange = (event) => {
+                setName(event.target.value);
+            };
+
+            return (
+                <form>
+                    <label>
+                        Name:
+                        <input type="text" value={name} onChange={handleChange} />
+                    </label>
+                </form>
+            );
+        }
+
+        export default Form;
+        ```
+
+- **Handling Form Submission**: Use the `onSubmit` event to handle form submission and prevent the default behavior.
+    - Example:
+        ```jsx
+        import React, { useState } from 'react';
+
+        function Form() {
+            const [name, setName] = useState('');
+
+            const handleChange = (event) => {
+                setName(event.target.value);
+            };
+
+            const handleSubmit = (event) => {
+                event.preventDefault(); // Prevents the default form submission behavior
+                alert(`Submitted Name: ${name}`);
+            };
+
+            return (
+                <form onSubmit={handleSubmit}>
+                    <label>
+                        Name:
+                        <input type="text" value={name} onChange={handleChange} />
+                    </label>
+                    <button type="submit">Submit</button>
+                </form>
+            );
+        }
+
+        export default Form;
+        ```
+
+#### Lifting State Up
+- **Lifting State Up**: When multiple components need to share the same state, lift the state up to their closest common ancestor.
+    - This ensures that the state is managed in a single place and can be passed down as props to child components.
+    - Example:
+        ```jsx
+        import React, { useState } from 'react';
+
+        function ParentComponent() {
+            const [name, setName] = useState('');
+
+            return (
+                <div>
+                    <Form name={name} setName={setName} />
+                    <Display name={name} />
+                </div>
+            );
+        }
+
+        function Form({ name, setName }) {
+            const handleChange = (event) => {
+                setName(event.target.value);
+            };
+
+            return (
+                <form>
+                    <label>
+                        Name:
+                        <input type="text" value={name} onChange={handleChange} />
+                    </label>
+                </form>
+            );
+        }
+
+        function Display({ name }) {
+            return <p>Entered Name: {name}</p>;
+        }
+
+        export default ParentComponent;
+        ```
+
+#### Event Objects
+- **Synthetic Event Object**: React's cross-browser wrapper around the native event object.
+    - Provides consistent properties and methods across different browsers.
+    - Example:
+        ```jsx
+        function Form() {
+            const handleChange = (event) => {
+                console.log('Input Value:', event.target.value);
+            };
+
+            return (
+                <form>
+                    <label>
+                        Name:
+                        <input type="text" onChange={handleChange} />
+                    </label>
+                </form>
+            );
+        }
+
+        export default Form;
+        ```
+
+- **Common Event Properties**:
+    - `event.target`: The element that triggered the event.
+    - `event.type`: The type of event (e.g., 'click', 'submit').
+    - `event.preventDefault()`: Prevents the default action of the event.
+    - `event.stopPropagation()`: Stops the event from propagating to parent elements.
+
+By understanding and implementing these concepts, you can effectively manage forms in React, capture user input, handle form submissions, and share state between components.
+
 
 <!-- !=============================================================================== -->
 ### Ch 7 - CRUD operations, useEffect hook
-- Notes:
+
+#### What is useEffect?
+- The `useEffect` hook is used to perform side effects in functional components.
+- Side effects include data fetching, subscriptions, DOM manipulations, and more.
+- It runs after every render by default and can be controlled using dependencies.
+- The cleanup function returned by `useEffect` is used to clean up side effects.
+
+#### Example of CRUD Operations with useEffect
+
+In this example, we will create a simple React application that performs CRUD (Create, Read, Update, Delete) operations on a list of videos. Each video will have a title and description, and we will use a form to add new videos and edit existing ones. The data will be managed using the `useState` and `useEffect` hooks.
+
+**App.js**
+
+```jsx
+import { useState } from 'react';
+import './App.css';
+import AddVideo from './components/AddVideo';
+import videoDB from './data/data';
+import VideoList from './components/VideoList';
+
+function App() {
+    console.log('render App');
+
+    const [videos, setVideos] = useState(videoDB);
+    const [editableVideo, setEditableVideo] = useState(null);
+
+    function addVideos(video) {
+        setVideos([
+            ...videos,
+            { ...video, id: videos.length + 1 }
+        ]);
+    }
+
+    function deleteVideo(id) {
+        setVideos(videos.filter(video => video.id !== id));
+    }
+
+    function editVideo(id) {
+        setEditableVideo(videos.find(video => video.id === id));
+    }
+
+    function updateVideo(video) {
+        const index = videos.findIndex(v => v.id === video.id);
+        const newVideos = [...videos];
+        newVideos.splice(index, 1, video);
+        setVideos(newVideos);
+    }
+
+    return (
+        <div className="App" onClick={() => console.log('App')}>
+            <AddVideo addVideos={addVideos} updateVideo={updateVideo} editableVideo={editableVideo}></AddVideo>
+            <VideoList deleteVideo={deleteVideo} editVideo={editVideo} videos={videos}></VideoList>
+        </div>
+    );
+}
+
+export default App;
+```
+
+**AddVideo.js**
+
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function AddVideo({ addVideos, updateVideo, editableVideo }) {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+
+    useEffect(() => {
+        if (editableVideo) {
+            setTitle(editableVideo.title);
+            setDescription(editableVideo.description);
+        } else {
+            setTitle('');
+            setDescription('');
+        }
+    }, [editableVideo]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (editableVideo) {
+            updateVideo({ ...editableVideo, title, description });
+        } else {
+            addVideos({ title, description });
+        }
+        setTitle('');
+        setDescription('');
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter video title"
+                required
+            />
+            <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter video description"
+                required
+            />
+            <button type="submit">{editableVideo ? 'Update Video' : 'Add Video'}</button>
+        </form>
+    );
+}
+
+export default AddVideo;
+```
+
+**VideoList.js**
+
+```jsx
+import React from 'react';
+
+function VideoList({ videos, deleteVideo, editVideo }) {
+    return (
+        <div>
+            {videos.map(video => (
+                <div key={video.id} style={{ border: '1px solid black', margin: '10px', padding: '10px' }}>
+                    <h3>{video.title}</h3>
+                    <p>{video.description}</p>
+                    <button onClick={() => editVideo(video.id)}>Edit</button>
+                    <button onClick={() => deleteVideo(video.id)}>Delete</button>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+export default VideoList;
+```
+
+In this example:
+- `App.js` manages the state of the videos and handles CRUD operations.
+- `AddVideo.js` handles the form for adding and editing videos, using `useEffect` to update the form when editing a video.
+- `VideoList.js` displays the list of videos with edit and delete options.
+
+This example demonstrates how to use `useState` and `useEffect` hooks to manage state and side effects in a React application, performing CRUD operations on a list of videos.
+
 
 <!-- !=============================================================================== -->
 ### Ch 8 - useReducers for State management
